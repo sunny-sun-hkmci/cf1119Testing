@@ -34,3 +34,8 @@ layout in both languages; the committed HTML files are the source of truth from 
 > Create branch `content-update`. Add one programme item in English and in Traditional Chinese: a
 > sign-language interpreted lantern walk. Keep both languages consistent, run `npm run check`, commit, push the
 > branch and do not open the pull request.
+
+## 6. Maintenance change for the live pull request demo (headless `claude -p`)
+> Maintenance change, following CLAUDE.md and BRIEF.md. On the Venues and travel pages (public/venues/index.html and public/zh-hant/venues/index.html), update the shuttle bus information: add that on closing night, Sunday 17 October, shuttle buses run until 00:30 after the closing concert (the existing text says the last bus is at 23:30). Keep English and Traditional Chinese equal in meaning, keep the existing structure, add no external resources, and do not touch any file other than those two pages. Do not commit or push. When done, run npm run check and report what you changed.
+
+Run with `--permission-mode acceptEdits` and only Read, Edit and `npm run check` allowed.

@@ -1,0 +1,5 @@
+# Everything Codex writes at runtime. Only config.toml, README.md and this file are tracked.
+*
+!.gitignore
+!config.toml
+!README.md

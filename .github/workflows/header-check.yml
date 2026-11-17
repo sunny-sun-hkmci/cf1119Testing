@@ -1,0 +1,35 @@
+name: Header check
+
+# Run by hand after a preview or production URL exists:
+# Actions tab -> Header check -> Run workflow -> paste the URL.
+# If the preview is behind Cloudflare Access, add the repo secrets
+# CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET (an Access service token limited to this app).
+on:
+  workflow_dispatch:
+    inputs:
+      preview_url:
+        description: "https URL to test, e.g. https://abc123-harbourlights-demo.<account>.workers.dev"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  headers:
+    name: Security headers on ${{ inputs.preview_url }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Check headers
+        env:
+          PREVIEW_URL: ${{ inputs.preview_url }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: node scripts/check-headers.mjs

@@ -1,0 +1,21 @@
+# Sample Codex configuration for the governed demo.
+# Use it by pointing CODEX_HOME at this folder, never at ~/.codex:
+#   CODEX_HOME="$PWD/demo-tools/codex-home" codex
+# Do not put secrets in this file. Keys and tokens stay in the environment or the Gateway.
+
+# Ask a human before anything that could change the outside world or leave the project folder.
+approval_policy = "on-request"
+
+# The agent may read and edit files inside the project folder only.
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+# No network from inside the sandbox: Codex cannot call Cloudflare, npm publish or any deploy API.
+network_access = false
+
+# --------------------------------------------------------------------------------------
+# TODO(T4): model provider section. Intentionally NOT filled in.
+# Research task T1 (../research/facts.md) decides how Codex reaches the company AI Gateway
+# (base URL, wire API, and how the Cloudflare Access token header is sent). Task T4 will add
+# the `model_provider` setting and a `[model_providers.<name>]` table here.
+# --------------------------------------------------------------------------------------

@@ -1,0 +1,12 @@
+# Every change needs review from the owner. Branch protection ("Require review from Code Owners")
+# turns this into a hard rule. Governance and pipeline files are listed explicitly so they are
+# never changed without a human looking at them.
+*                              @sunny-sun-hkmci
+/CLAUDE.md                     @sunny-sun-hkmci
+/AGENTS.md                     @sunny-sun-hkmci
+/GOVERNANCE.md                 @sunny-sun-hkmci
+/.claude/                      @sunny-sun-hkmci
+/.github/                      @sunny-sun-hkmci
+/demo-tools/                   @sunny-sun-hkmci
+/wrangler.jsonc                @sunny-sun-hkmci
+/public/_headers               @sunny-sun-hkmci

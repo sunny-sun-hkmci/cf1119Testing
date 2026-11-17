@@ -1,0 +1,14 @@
+{
+  // Worker serving the static site. No account_id and no routes on purpose:
+  // the hosting task (T3) adds the custom domain, and deploys run only from the pipeline.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "harbourlights-demo",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  // Logs and traces for the demo.
+  "observability": { "enabled": true }
+}

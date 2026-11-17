@@ -9,6 +9,9 @@
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash"
   },
+  // Worker Previews: branch builds run `npx wrangler preview`, which needs this block (it can be empty).
+  // Preview URLs are staff-only through Cloudflare Access; see GOVERNANCE.md.
+  "previews": {},
   // Logs and traces for the demo.
   "observability": { "enabled": true }
 }

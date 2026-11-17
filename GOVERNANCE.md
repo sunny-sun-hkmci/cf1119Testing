@@ -22,6 +22,9 @@ The same rule covers building the site and every later maintenance change.
 | Command deny list | `.claude/settings.json` | Claude Code running deploy commands, pushing to `main`, merging pull requests, reading `.env` files | A hard "no" that the AI cannot talk its way past. |
 | Deploy-blocking hook | `.claude/hooks/block-deploy.mjs` | The same actions when they are hidden inside another command | The deny list matches the start of a command. The hook reads the whole command and fails closed: if it cannot understand the input, it blocks. |
 | Codex sandbox | `demo-tools/codex-home/config.toml` | Codex editing outside the project or using the network | Codex asks before risky actions, and its sandbox has no network, so it cannot call a deploy service. |
+| AI Gateway behind Access | `demo-tools/claude-gateway.sh`, `demo-tools/codex-home/config.toml` | AI keys on laptops, anonymous AI use, no record of who used what | Both tools sign in with company SSO; the provider key stays in the Gateway; every request is logged per person with model, tokens and cost. |
+| Gateway DLP and spend limit (Beta) | Cloudflare AI Gateway settings | Card numbers in prompts, runaway cost per person | DLP blocks a prompt that contains a credit-card number before it reaches the provider; a per-user daily budget returns an error when exceeded. |
+| Managed settings (sample) | `demo-tools/managed/` | A user overriding the project rules on their own laptop | IT delivers these files by device management; users cannot weaken them. |
 | Protected `main` branch | GitHub branch protection (see README) | Direct pushes, unreviewed merges, force-pushes | Even a person's mistake cannot reach production without a second look. |
 | Code owners | `.github/CODEOWNERS` | Changes to rules, pipeline and headers without owner review | The files that define the controls need a named human to approve changes. |
 | Required checks | `.github/workflows/ci.yml` | Broken builds, inaccessible pages, leaked secrets | Machines catch the boring problems before a person reviews. |
@@ -55,6 +58,9 @@ together they are reliable.
 - A person who is a repository administrator can change branch protection. Keep that group small and review it.
 - The Cloudflare AI Gateway only sees traffic that is routed through it. Personal AI accounts used outside the
   Gateway are a company policy question, not something this repo can stop.
+- Gateway DLP and spend limits are Beta features. The Gateway log shows the person's name and email from Access;
+  the stored `cf.user_id` is Access's own user ID.
+- Codex through the Gateway needs an OpenAI model and a key stored in the Gateway; the demo shows its configuration only.
 - The staff-only preview and pipeline are set up in Cloudflare, not in this repo. See the hosting task notes.
 
 ## Changing these rules

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "apiKeyHelper": "cloudflared access login --no-verbose https://aigw-native.mcmsp.dev",
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://aigw-native.mcmsp.dev/anthropic",
+    "CLAUDE_CODE_API_KEY_HELPER_TTL_MS": "1800000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  },
+  "permissions": {
+    "deny": [
+      "Bash(wrangler deploy*)",
+      "Bash(npx wrangler deploy*)",
+      "Bash(npx wrangler@* deploy*)",
+      "Bash(wrangler versions deploy*)",
+      "Bash(wrangler rollback*)",
+      "Bash(git push*main*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(gh pr merge*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)"
+    ],
+    "disableBypassPermissionsMode": "disable"
+  },
+  "allowManagedPermissionRulesOnly": true
+}

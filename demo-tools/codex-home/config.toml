@@ -3,6 +3,11 @@
 #   CODEX_HOME="$PWD/demo-tools/codex-home" codex
 # Do not put secrets in this file. Keys and tokens stay in the environment or the Gateway.
 
+# Use the company AI Gateway (provider table at the bottom of this file).
+# Keep these top-level keys above every [table] header, or TOML files them under the wrong table.
+model_provider = "aigw"
+model = "gpt-5.5" # any OpenAI Responses-capable model the Gateway can serve
+
 # Ask a human before anything that could change the outside world or leave the project folder.
 approval_policy = "on-request"
 
@@ -14,8 +19,26 @@ sandbox_mode = "workspace-write"
 network_access = false
 
 # --------------------------------------------------------------------------------------
-# TODO(T4): model provider section. Intentionally NOT filled in.
-# Research task T1 (../research/facts.md) decides how Codex reaches the company AI Gateway
-# (base URL, wire API, and how the Cloudflare Access token header is sent). Task T4 will add
-# the `model_provider` setting and a `[model_providers.<name>]` table here.
+# [model_providers.aigw]: the company Cloudflare AI Gateway (custom domain behind Cloudflare Access).
+# Source: https://developers.cloudflare.com/ai-gateway/integrations/coding-agents/openai-codex/
+#
+# - Codex 0.169 custom providers accept only wire_api = "responses" ("chat" is refused at load).
+# - /openai is the Gateway's OpenAI route. Codex appends /responses to base_url itself.
+# - The Gateway needs an OpenAI key in its Provider Keys (BYOK) or Unified Billing credits.
+#   This demo has neither, so this file is shown and parse-checked, not used for a live run.
+# - No key is stored on the laptop. The [auth] helper prints the Cloudflare Access token of the
+#   signed-in staff member; the Gateway adds that person's ID to every log row.
 # --------------------------------------------------------------------------------------
+[model_providers.aigw]
+name = "Company AI Gateway"
+base_url = "https://aigw-native.mcmsp.dev/openai"
+wire_api = "responses"
+
+[model_providers.aigw.auth]
+command = "cloudflared"
+args = ["access", "login", "--no-verbose", "https://aigw-native.mcmsp.dev"]
+timeout_ms = 30000
+refresh_interval_ms = 0
+
+# Alternative to the [auth] block: send the token from an environment variable.
+# env_http_headers = { "cf-access-token" = "CF_ACCESS_TOKEN" }

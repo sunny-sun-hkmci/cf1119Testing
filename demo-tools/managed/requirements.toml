@@ -1,0 +1,29 @@
+# SAMPLE requirements.toml: how IT enforces Codex rules on every laptop.
+# Requirements are admin-set limits. A user's own config.toml or a repo's config can only stay inside them.
+# Where it goes (https://developers.openai.com/codex/enterprise/admin-setup):
+#   macOS / Linux, system file: /etc/codex/requirements.toml  (push with your MDM)
+#   or cloud-managed from the ChatGPT admin console.
+# Field names were checked against the bundled Codex 0.169 binary; confirm them against the current OpenAI
+# docs before rolling out, because this schema is changing between versions (newer builds also accept
+# `allowed_permission_profiles`, which replaces `allowed_sandbox_modes` when present).
+# No secrets belong in this file.
+
+# Codex may never run with approvals switched off.
+allowed_approval_policies = ["untrusted", "on-request"]
+
+# Codex may read and write the project folder at most. "danger-full-access" is not allowed.
+allowed_sandbox_modes = ["read-only", "workspace-write"]
+
+# No live web search, so prompts and code do not go to the open web.
+allowed_web_search_modes = ["disabled"]
+
+# Command rules. Codex merges these with the user's own rules and uses the most restrictive result.
+# Only "prompt" and "forbidden" are valid here ("allow" is refused in requirements.toml).
+[rules]
+prefix_rules = [
+  { pattern = [{ token = "wrangler" }, { token = "deploy" }], decision = "forbidden", justification = "Only the Cloudflare pipeline deploys. Open a pull request instead." },
+  { pattern = [{ token = "npx" }, { token = "wrangler" }, { token = "deploy" }], decision = "forbidden", justification = "Only the Cloudflare pipeline deploys. Open a pull request instead." },
+  { pattern = [{ token = "wrangler" }, { token = "rollback" }], decision = "forbidden", justification = "Rollbacks go through the Cloudflare dashboard with a named approver." },
+  { pattern = [{ token = "git" }, { token = "push" }, { token = "--force" }], decision = "forbidden", justification = "No force-pushes." },
+  { pattern = [{ token = "git" }, { token = "push" }], decision = "prompt", justification = "A person confirms every push, and never to main." },
+]

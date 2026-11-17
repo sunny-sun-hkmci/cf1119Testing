@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "apiKeyHelper": "cloudflared access login --no-verbose https://aigw-native.mcmsp.dev",
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://aigw-native.mcmsp.dev/anthropic",
+    "CLAUDE_CODE_API_KEY_HELPER_TTL_MS": "1800000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  }
+}

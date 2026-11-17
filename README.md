@@ -15,7 +15,10 @@ public/                  the website (static files) + _headers (security headers
 wrangler.jsonc           Worker "harbourlights-demo" serving public/ (no account id, no routes yet)
 scripts/                 check-site.mjs (build check), check-headers.mjs (live header check)
 .claude/                 Claude Code deny rules and the deploy-blocking hook
-demo-tools/codex-home/   sample Codex config (approval and sandbox; model provider is a TODO)
+demo-tools/codex-home/   Codex config: approval, sandbox, and the AI Gateway model provider
+demo-tools/claude-gateway.sh  runs Claude Code through the AI Gateway (no key on the laptop)
+demo-tools/claude-code/  settings file used by that launcher (--settings, this run only)
+demo-tools/managed/      samples IT would push to every laptop (Claude Code managed-settings.json, Codex requirements.toml)
 .github/                 CI workflows and CODEOWNERS
 ```
 
@@ -32,6 +35,24 @@ npm run dev          # local preview at http://localhost:8787
 
 Nothing in this repo deploys from a laptop. Deploys come only from the Cloudflare Workers Builds pipeline
 after a merge to `main` (set up in the hosting task).
+
+## AI tools through the company AI Gateway
+
+Both tools are set up to use the Cloudflare AI Gateway at `aigw-native.mcmsp.dev` (behind Cloudflare Access).
+No provider key is on the laptop: the key lives in the Gateway, and staff sign in with company SSO.
+Neither setup touches `~/.claude` or `~/.codex`.
+
+```bash
+demo-tools/claude-gateway.sh                    # Claude Code through the Gateway (first run opens the SSO login)
+demo-tools/claude-gateway.sh -p "your prompt"   # one-shot
+CODEX_HOME="$PWD/demo-tools/codex-home" codex   # Codex, needs an OpenAI key stored in the Gateway
+```
+
+- Needs `cloudflared` and `claude` on the PATH. Codex 0.169 speaks only the OpenAI Responses API, so through the
+  Gateway it needs an OpenAI model; the demo shows Codex's config and rules and runs Claude Code live.
+- The Gateway log shows who (name and email from Access), which tool and model, tokens and cost.
+  Its DLP (credit-card block) and per-user spend limit are Beta features.
+- `demo-tools/managed/` shows how IT enforces the same rules on every laptop. See its README.
 
 ## Checks in GitHub Actions
 

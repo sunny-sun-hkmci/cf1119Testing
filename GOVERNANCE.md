@@ -53,7 +53,7 @@ together they are reliable.
 
 Every Workers Builds run (production and branch previews) runs `node scripts/security-gate.mjs` before it deploys:
 
-1. It takes the diff of the commit being built (against its parent on `main`, against the merge base with `main` on a branch).
+1. It takes the diff of the commit being built: on a branch build, everything the branch adds to `main` (merge base); on `main`, the commit against its first parent. If the merge base cannot be computed it says so in the log and audits the last commit only.
 2. It sends the diff, with the prompt in `security/review-prompt.md`, to Claude (`claude-sonnet-5-5`) through the company
    AI Gateway. Claude Code runs headless with a pinned version (lockfile in `security/tools/`) and read-only tools.
    If Claude Code cannot run, the same prompt goes to the Anthropic Messages API through the same Gateway.

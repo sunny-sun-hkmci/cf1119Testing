@@ -138,13 +138,20 @@ function resolveCommit() {
 
 function resolveBase(sha, branch) {
   // On a branch build, audit everything the branch adds to main, not just the last commit.
+  // Workers Builds clones with depth 1, which hides the commit's parents (a "shallow graft"), so fetch main AND
+  // this branch with more depth; that restores the history needed for a merge base (reproduced and checked
+  // locally with a --depth=1 clone).
   if (branch !== 'main') {
-    const f = git(['fetch', '--no-tags', '--quiet', '--depth=200', 'origin', 'main'], { timeout: 90_000 });
+    const valid = git(['check-ref-format', '--branch', branch]).ok;
+    const refs = ['+refs/heads/main:refs/remotes/gate/main'];
+    if (valid) refs.push(`+refs/heads/${branch}:refs/remotes/gate/branch`);
+    const f = git(['fetch', '--no-tags', '--quiet', '--depth=200', 'origin', ...refs], { timeout: 120_000 });
     if (f.ok) {
-      const mb = git(['merge-base', sha, 'FETCH_HEAD']);
-      if (mb.ok && /^[0-9a-f]{40}$/.test(mb.out)) return { base: mb.out, how: 'merge-base with main' };
+      const mb = git(['merge-base', sha, 'refs/remotes/gate/main']);
+      if (mb.ok && /^[0-9a-f]{40}$/.test(mb.out)) return { base: mb.out, how: 'merge-base with main (whole branch)' };
     }
-    warn(`note: could not compute the merge base with main (${f.err.split('\n')[0] || 'no detail'}); using the parent commit only`);
+    warn(`WARNING: could not compute the merge base with main (fetch ${f.ok ? 'ok' : 'failed'}: ${f.err.split('\n')[0] || 'no detail'}); ` +
+      'only the last commit of this branch is audited');
   }
   let parents = git(['rev-list', '--parents', '-n', '1', sha]).out.split(' ').slice(1);
   if (parents.length === 0 && git(['rev-parse', '--is-shallow-repository']).out === 'true') {

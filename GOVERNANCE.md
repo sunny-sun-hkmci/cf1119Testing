@@ -30,6 +30,7 @@ The same rule covers building the site and every later maintenance change.
 | Pipeline-only deploy credential | Cloudflare Workers Builds | Anyone deploying from a laptop | No deploy token exists on a laptop or in an AI session. |
 | Security headers | `public/_headers`, header-check workflow | Clickjacking, content sniffing, injected scripts, downgrade attacks | Protects visitors; the check proves the headers really arrive. |
 | No third-party code or trackers | `scripts/check-site.mjs`, CSP | Supply-chain and privacy risk | The site loads nothing from outside its own address, and the build fails if that changes. |
+| Security audit gate | `scripts/security-gate.mjs`, `security/review-prompt.md`, Cloudflare Workers Builds deploy commands | Deploying (or previewing) a change that a security review did not pass | The build runs an AI security review of the change on Cloudflare, through the AI Gateway, and records the verdict in Workers KV. No passing audit means a failed build and nothing deployed. |
 | Rollback | Cloudflare Workers versions | A bad release staying live | Recovery takes seconds and needs no code change. |
 
 ## Layers: no single control is trusted
@@ -48,6 +49,30 @@ together they are reliable.
 | Secrets | Say that one is needed | Read, print or store any |
 | Governance files | Suggest changes in a pull request | Change them without the owner asking |
 
+## The security audit gate
+
+Every Workers Builds run (production and branch previews) runs `node scripts/security-gate.mjs` before it deploys:
+
+1. It takes the diff of the commit being built: on a branch build, everything the branch adds to `main` (merge base); on `main`, the commit against its first parent. If the merge base cannot be computed it says so in the log and audits the last commit only.
+2. It sends the diff, with the prompt in `security/review-prompt.md`, to Claude (`claude-sonnet-5-5`) through the company
+   AI Gateway. Claude Code runs headless with a pinned version (lockfile in `security/tools/`) and read-only tools.
+   If Claude Code cannot run, the same prompt goes to the Anthropic Messages API through the same Gateway.
+3. The model must answer with JSON `{verdict, findings}`. A `fail` verdict, any `high` or `critical` finding, an error,
+   a timeout, bad JSON, an oversized diff (150 KB) or a missing record is a **failed build**. The deploy command after
+   `&&` never runs.
+4. The verdict is written to Workers KV namespace `harbourlights-demo-audits`, key `audit:<commit sha>`. Read it with
+   `npx wrangler kv key get "audit:<sha>" --namespace-id <id> --remote`. Production deploys also carry the message
+   `security-audit: pass <sha>`.
+5. The Gateway log shows each audit with metadata `purpose: security-audit`, the commit SHA and the repo label.
+
+Credentials: an Access service token (`harbourlights-demo-ci`) stored as Workers Builds secrets, allowed by one Service Auth
+policy on the Gateway's Access application. There is no Anthropic key anywhere in the repo or the build; it lives in the
+Gateway. The token lets a caller use the Gateway (cost), nothing else.
+
+Build settings (Cloudflare dashboard, not in this repo): production deploy command
+`node scripts/security-gate.mjs && npx wrangler deploy --message "security-audit: pass $WORKERS_CI_COMMIT_SHA"`;
+non-production deploy command `node scripts/security-gate.mjs && npx wrangler preview`.
+
 ## Honest limits
 
 - The deny list and hook protect Claude Code. They do not control other tools on a laptop. Codex is covered by its
@@ -55,6 +80,15 @@ together they are reliable.
 - A person who is a repository administrator can change branch protection. Keep that group small and review it.
 - The Cloudflare AI Gateway only sees traffic that is routed through it. Personal AI accounts used outside the
   Gateway are a company policy question, not something this repo can stop.
+- **The audit is a model review, not a proof.** It can miss problems and can be talked around by a determined author. The
+  prompt treats the diff as untrusted data and the verdict must be strict JSON, but a human code owner still approves every merge.
+- **The gate script lives in the repo it audits.** A pull request can change it. every file is under the
+  catch-all CODEOWNERS rule and the review prompt names a weakened gate as a critical finding, but the real control is the code owner reading
+  that change. A hardened version would run the audit outside the repo (a separate Worker or Workflow).
+- **Anyone with personal deploy rights can still run `wrangler deploy` from a laptop and skip the build.** The gate covers the
+  pipeline, not a person with a deploy credential. Keep that group small (see the points above).
+- **Build secrets are visible to the build, so a pull request that edits the build scripts could read them.** The service token
+  can only call the Gateway, and the Gateway has a spend limit.
 - The staff-only preview and pipeline are set up in Cloudflare, not in this repo. See the hosting task notes.
 
 ## Changing these rules

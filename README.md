@@ -13,7 +13,9 @@ AI-assisted web workflow on Cloudflare**. The festival, brand and venues are inv
 ```
 public/                  the website (static files) + _headers (security headers)
 wrangler.jsonc           Worker "harbourlights-demo" serving public/ (no account id, no routes yet)
-scripts/                 check-site.mjs (build check), check-headers.mjs (live header check)
+scripts/                 check-site.mjs (build check), check-headers.mjs (live header check),
+                         security-gate.mjs (AI security audit run by Workers Builds before every deploy)
+security/                review-prompt.md (what the auditor is asked) and tools/ (pinned Claude Code lockfile)
 .claude/                 Claude Code deny rules and the deploy-blocking hook
 demo-tools/codex-home/   sample Codex config (approval and sandbox; model provider is a TODO)
 .github/                 CI workflows and CODEOWNERS
@@ -63,6 +65,24 @@ Repo, **Settings**, then:
 6. After the hosting task connects Workers Builds: production branch is `main`; non-production branches build previews.
 
 Quick check that protection works: with the ruleset on, `git push origin main` from a laptop must be rejected.
+
+## Security audit gate (Workers Builds)
+
+Workers Builds runs `scripts/security-gate.mjs` before every deploy and preview. It reviews the diff with Claude through
+the AI Gateway, fails the build on a failing or missing verdict, and records the verdict in Workers KV (`audit:<sha>`).
+How it works, what it costs, and its limits: see [GOVERNANCE.md](GOVERNANCE.md).
+
+Workers Builds settings (dashboard, Worker `harbourlights-demo`, Settings, Build):
+
+| Setting | Value |
+|---|---|
+| Deploy command (production) | `node scripts/security-gate.mjs && npx wrangler deploy --message "security-audit: pass $WORKERS_CI_COMMIT_SHA"` |
+| Non-production deploy command | `node scripts/security-gate.mjs && npx wrangler preview` |
+| Build variable `AUDIT_KV_NAMESPACE_ID` | id of KV namespace `harbourlights-demo-audits` |
+| Build secrets `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | Access service token `harbourlights-demo-ci` (never commit these) |
+
+Run it locally (uses the Gateway, costs a little): export the two secrets, then `AUDIT_REQUIRE_KV=0 node scripts/security-gate.mjs`.
+Test fail-closed: `AUDIT_GATEWAY_URL=https://127.0.0.1:9 node scripts/security-gate.mjs` must exit 1.
 
 ## Pull request for the demo
 

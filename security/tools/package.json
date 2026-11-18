@@ -1,0 +1,9 @@
+{
+  "name": "harbourlights-demo-audit-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned tool used only by scripts/security-gate.mjs. Installed with npm ci into a temp folder, never into the site.",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.318"
+  }
+}

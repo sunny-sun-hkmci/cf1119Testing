@@ -229,6 +229,9 @@ function minimalEnv(extra) {
   const keep = ['PATH', 'LANG', 'LC_ALL', 'TZ', 'TMPDIR', 'SSL_CERT_FILE', 'NODE_EXTRA_CA_CERTS', 'NODE_OPTIONS', 'npm_config_cache'];
   const env = {};
   for (const k of keep) if (process.env[k]) env[k] = process.env[k];
+  // The build image's node and npm are asdf shims that look for ~/.asdf: they need the real HOME and ASDF_*.
+  // Only the Claude Code run overrides HOME (it is the process that has a Read tool).
+  for (const k of Object.keys(process.env)) if (k === 'HOME' || k.startsWith('ASDF_')) env[k] = process.env[k];
   return { ...env, ...extra };
 }
 
@@ -305,7 +308,7 @@ async function engineClaudeCode(ctx, systemPrompt, userMessage) {
     log(`Installing Claude Code ${CLAUDE_CODE_VERSION} from security/tools/package-lock.json ...`);
     const inst = await run('npm', ['ci', '--no-audit', '--no-fund', '--ignore-scripts=false'], {
       cwd: toolsDir,
-      env: minimalEnv({ HOME: work, npm_config_loglevel: 'error' }),
+      env: minimalEnv({ npm_config_loglevel: 'error' }),
       timeout: INSTALL_TIMEOUT_MS,
     });
     if (inst.code !== 0) throw new ToolingError(`npm ci for Claude Code failed: ${inst.err.split('\n').slice(-3).join(' | ')}`);
